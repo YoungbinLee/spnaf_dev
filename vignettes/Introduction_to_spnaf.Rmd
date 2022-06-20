@@ -62,7 +62,7 @@ head(CA_polygon) # it has geometry column
 
 # Execution of Gij.polygon with data above and given parameters
 result <- Gij.polygon(df = OD, shape = CA_polygon, queen = TRUE, snap = 1,
-method = 't', n = 1000)
+method = 't', R = 1000)
 ```
 
 ### Interpretation of the result
