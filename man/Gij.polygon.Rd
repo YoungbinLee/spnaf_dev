@@ -4,7 +4,7 @@
 \alias{Gij.polygon}
 \title{Calculate spatial autocorrelation with OD data and corresponding polygons.}
 \usage{
-Gij.polygon(df, shape, queen = TRUE, snap = 1, method = "t", n = 1000)
+Gij.polygon(df, shape, queen = TRUE, snap = 1, method = "t", R = 1000)
 }
 \arguments{
 \item{df}{A data.frame that contains your Origin-Destination data. The df must consist of "oid" (origin id), "did" (destination id), "n" (flow weight).}
@@ -17,7 +17,7 @@ Gij.polygon(df, shape, queen = TRUE, snap = 1, method = "t", n = 1000)
 
 \item{method}{A string value among "o" (origin based), "d" (destination based), and "t" (both way) which determines the way to generate Spatial Weights. The default value is "t".}
 
-\item{n}{An integer value to define how many times you want to execute bootstrapping.}
+\item{R}{An integer value to define how many times you want to execute bootstrapping.}
 }
 \value{
 The result is in the form of a list which includes a dataframe and a \code{sf} object.
@@ -44,7 +44,7 @@ head(CA_polygon) # it has a geometry column
 # Execution of Gij.polygon with data above and given parameters
 \donttest{
 result <- Gij.polygon(df = OD, shape = CA_polygon, queen = TRUE, snap = 1,
-method = 't', n = 1000)
+method = 't', R = 1000)
 }
 
 # check the results
