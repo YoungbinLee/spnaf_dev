@@ -2,6 +2,8 @@
 
 Resultlines <- function(shape, result_frame){
 
+    cat("(4) Generating result in lines ... ")
+
     x <- y <- geometry <- coords <- id <- oid <- did <- n <- Gij <- pval <- NULL
     x.x <- y.x <- x.y <- y.y <- oid_x <- oid_y <- did_x <- did_y <- NULL
     centroids <- sf::st_centroid(shape, of_largest_polygon = T) %>%
@@ -21,6 +23,8 @@ Resultlines <- function(shape, result_frame){
         dplyr::select(-oid_x, -oid_y, -did_x, -did_y) %>%
         sf::st_as_sf(wkt = "sfc")
     sf::st_crs(result_lines) <- sf::st_crs(shape)
+
+    cat("Done !\n")
 
     return(result_lines)
 }

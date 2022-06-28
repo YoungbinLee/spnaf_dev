@@ -2,35 +2,40 @@
 
 SpatialWeight <- function(df, shape, snap, queen){
 
+    cat("(1) Creating Spatial Weights... ")
+
     w <- NULL
-    nb <- unclass(spdep::poly2nb(shape, snap, queen))
+    nb <- unclass(spdep::poly2nb(shape, snap, queen)) # create nb data from input shape
     original_id <- shape$id
     nb <- lapply(nb, function(data){
-        return(original_id[data])
+        return(original_id[data]) # substitute adjacent index for original id
     })
-    names(nb) <- original_id
+    names(nb) <- original_id # reference index for original id
 
+    # convert list to data.frame
     did <- stack(nb)
     did <- setNames(did$values, did$ind)
     oid <- names(did)
     nb_frame <- data.frame(oid = oid)
     nb_frame$did <- did
-    nb_frame$w <- 1
+    nb_frame$w <- 1 # add w as 1 for contiguous polygons
 
-    result <- nb_frame %>%
-        dplyr::left_join(df, by = c("oid" = "oid", "did" = "did")) %>%
-        dplyr::mutate(w = ifelse(oid == did, 1, w)) %>%
-        dplyr::arrange(oid, did)
+    # join spatial weights to input dataframe
+    result <- df %>%
+        dplyr::left_join(nb_frame, by = c("oid", "did")) %>%
+        dplyr::filter(!is.na(n)) # filter observations with valid n only
+
     ## Union is created by input polygons^2
     U <- merge(shape$id, shape$id)
     names(U) <- c("oid", "did")
-    ### Join OD data to Union
+    U <- U %>% filter(oid != did) # remove flow from i to i
+    ### Join OD data with spatial weights to Union
     result <- U %>%
         dplyr::left_join(result, by = c("oid" = "oid", "did" = "did")) %>%
         dplyr::mutate(n = ifelse(is.na(n), 0, n),
-                      w = ifelse(oid == did, 1, w),
                       w = ifelse(is.na(w), 0, 1))
 
-    return(result)
+    cat("Done !\n")
 
+    return(result)
 }

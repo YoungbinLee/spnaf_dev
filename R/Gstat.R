@@ -3,6 +3,8 @@
 
 Gstat <- function(SpatialWeights, method, star = TRUE){
 
+    cat("(2) Calculating Gij ... ")
+
     # t: n^2 = rows of Union
     t <- nrow(SpatialWeights)
     r_bar <- sum(SpatialWeights$n)/t
@@ -24,18 +26,22 @@ Gstat <- function(SpatialWeights, method, star = TRUE){
             origins <- ref %>%
                 dplyr::filter(oid == o, w == 1) %>%
                 dplyr::select(did) %>% unlist()
+            origins <- unique(c(o, origins)) # include o
             destinations <- ref %>%
                 dplyr::filter(oid == d, w == 1) %>%
                 dplyr::select(did) %>% unlist()
+            destinations <- unique(c(d, destinations)) # include d
         }else if(m == 'o'){
             origins <- o
             destinations <- ref %>%
                 dplyr::filter(oid == d, w == 1) %>%
                 dplyr::select(did) %>% unlist()
+            destinations <- unique(c(d, destinations)) # include d
         }else if(m == 'd'){
             origins <- ref %>%
                 dplyr::filter(oid == o, w == 1) %>%
                 dplyr::select(did) %>% unlist()
+            origins <- unique(c(o, origins)) # include o
             destinations <- d
         }else{
             stop("method must be one of c('t', 'o', 'd') \n")
@@ -49,8 +55,15 @@ Gstat <- function(SpatialWeights, method, star = TRUE){
         set <- rbind(set1, set2) %>%
             dplyr::distinct()
 
-        ## Wij*
-        Wij_star <- length(origins) + length(destinations) -1 # remove i --> j
+        ## Calculate Wij* for each case
+        if(m == 't'){
+            Wij_star <- length(origins) + length(destinations) -1 # remove duplicated i --> j
+        }else if(m == 'o'){
+            Wij_star <- length(origins)
+        }else{
+            Wij_star <- length(destinations)
+        }
+
         ## Wij*^2
         Wij_star_sq <- Wij_star**2
         ## S1
@@ -67,6 +80,8 @@ Gstat <- function(SpatialWeights, method, star = TRUE){
         return(l)
     }
     G <- do.call("bind_rows", lapply(SWL, subframe))
+
+    cat("Done! \n")
 
     return(G)
 }

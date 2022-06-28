@@ -1,4 +1,7 @@
 Boot <- function(rf, R){
+
+    cat("(3) Do bootstrapping ... ")
+
     G <- rf$Gij
     Gset <- data.frame(no = as.numeric(row.names(rf)), G = G)
     Gset_list <- split(Gset, Gset$no)
@@ -14,6 +17,8 @@ Boot <- function(rf, R){
     pval <- do.call("c", lapply(Gset_list, boot))
 
     result <- cbind(rf, pval)
+
+    cat("Done ! \n")
 
     return(result)
 }
