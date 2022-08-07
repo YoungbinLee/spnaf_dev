@@ -25,7 +25,9 @@ Imports:
     sf,
     spdep,
     tidyr,
-    rlang
+    rlang,
+    rmarkdown,
+    tmap
 Suggests: 
     knitr
 VignetteBuilder: knitr
