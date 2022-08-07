@@ -28,7 +28,8 @@ SpatialWeight <- function(df, shape, snap, queen){
     ## Union is created by input polygons^2
     U <- merge(shape$id, shape$id)
     names(U) <- c("oid", "did")
-    U <- U %>% filter(oid != did) # remove flow from i to i
+    U <- U %>% dplyr::filter(oid != did) # remove flow from i to i
+
     ### Join OD data with spatial weights to Union
     result <- U %>%
         dplyr::left_join(result, by = c("oid" = "oid", "did" = "did")) %>%
@@ -36,6 +37,9 @@ SpatialWeight <- function(df, shape, snap, queen){
                       w = ifelse(is.na(w), 0, 1))
 
     cat("Done !\n")
+    ## Alarm the size of the union set
+    cat(paste0("note: Total ", nrow(U), " network combinations are ready to be analyzed\n"))
+    cat(paste0("note: which is calculated by the input polygon data\n"))
 
     return(result)
 }
