@@ -39,6 +39,7 @@
 #' flow data, Journal of Geographical Systems, 1(3), 219-236. https://doi.org/10.1007/s101090050013
 
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
 #' @export Gij.polygon
 
 # Functions ---------------------------------------------------------------
@@ -52,7 +53,7 @@ Gij.polygon <- function(df, shape,
     sw <- SpatialWeight(df, shape, snap, queen)
     # result_frame: OD data + G statistic
     result_frame <- Gstat(SpatialWeights = sw, method = method) %>%
-        dplyr::select(oid, did, n, Gij)
+        dplyr::select(oid, did, .data$n, Gij)
     # result_frame: OD data + G statistic + pval
     result_frame <- Boot(rf = result_frame, R = R)
     # result_lines: OD data + G statistic + pval + WKT(lines)

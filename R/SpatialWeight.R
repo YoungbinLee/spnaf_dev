@@ -1,4 +1,5 @@
 #' @importFrom magrittr %>%
+#' @importFrom rlang .data
 
 SpatialWeight <- function(df, shape, snap, queen){
 
@@ -13,8 +14,8 @@ SpatialWeight <- function(df, shape, snap, queen){
     names(nb) <- original_id # reference index for original id
 
     # convert list to data.frame
-    did <- stack(nb)
-    did <- setNames(did$values, did$ind)
+    did <- utils::stack(nb)
+    did <- stats::setNames(did$values, did$ind)
     oid <- names(did)
     nb_frame <- data.frame(oid = oid)
     nb_frame$did <- did
@@ -23,7 +24,7 @@ SpatialWeight <- function(df, shape, snap, queen){
     # join spatial weights to input dataframe
     result <- df %>%
         dplyr::left_join(nb_frame, by = c("oid", "did")) %>%
-        dplyr::filter(!is.na(n)) # filter observations with valid n only
+        dplyr::filter(!is.na(.data$n)) # filter observations with valid n only
 
     ## Union is created by input polygons^2
     U <- merge(shape$id, shape$id)
@@ -33,7 +34,7 @@ SpatialWeight <- function(df, shape, snap, queen){
     ### Join OD data with spatial weights to Union
     result <- U %>%
         dplyr::left_join(result, by = c("oid" = "oid", "did" = "did")) %>%
-        dplyr::mutate(n = ifelse(is.na(n), 0, n),
+        dplyr::mutate(n = ifelse(is.na(.data$n), 0, .data$n),
                       w = ifelse(is.na(w), 0, 1))
 
     cat("Done !\n")

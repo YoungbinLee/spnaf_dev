@@ -3,3 +3,4 @@
 export(Gij.polygon)
 importFrom(dplyr,bind_rows)
 importFrom(magrittr,"%>%")
+importFrom(rlang,.data)
