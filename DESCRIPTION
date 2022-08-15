@@ -1,7 +1,7 @@
 Package: spnaf
 Type: Package
 Title: Spatial Network Autocorrelation for Flow Data
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: c(
     person(given="Youngbin", family="Lee", email = "youngbin@snu.ac.kr", role = c("aut", "cre"), comment = c(ORCID = "0000-0003-3466-6495")),
     person(given="Hui Jeong", family="Ha", email="hailyeeha@gmail.com", role="aut", comment = c(ORCID = "0000-0002-5229-4528")),
@@ -25,9 +25,9 @@ Imports:
     sf,
     spdep,
     tidyr,
-    rlang,
+    rlang
+Suggests: 
+    knitr,
     rmarkdown,
     tmap
-Suggests: 
-    knitr
 VignetteBuilder: knitr

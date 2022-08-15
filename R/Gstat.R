@@ -1,7 +1,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom dplyr bind_rows
 
-Gstat <- function(SpatialWeights, method, star = TRUE){
+Gstat <- function(SpatialWeights, method){
 
     cat("(2) Calculating Gij ... ")
 

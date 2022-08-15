@@ -11,7 +11,7 @@ Boot <- function(rf, R){
         sample[is.na(sample)] <- -100
         sorted <- sort(sample, decreasing = T)
         cr <- which(sorted == sample[1])/R
-        return(cr)
+        return(mean(cr))
     }
 
     pval <- do.call("c", lapply(Gset_list, boot))
