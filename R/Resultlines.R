@@ -6,7 +6,7 @@ Resultlines <- function(shape, result_frame){
 
     x <- y <- geometry <- coords <- id <- oid <- did <- n <- Gij <- pval <- NULL
     x.x <- y.x <- x.y <- y.y <- oid_x <- oid_y <- did_x <- did_y <- NULL
-    centroids <- sf::st_centroid(shape, of_largest_polygon = T) %>%
+    centroids <- suppressWarnings(sf::st_centroid(shape, of_largest_polygon = T)) %>%
         dplyr::mutate(coords = as.character(geometry)) %>%
         as.data.frame() %>%
         dplyr::select(-geometry) %>%

@@ -1,9 +1,9 @@
 #' @importFrom magrittr %>%
 #' @importFrom dplyr bind_rows
 
-Gstat <- function(SpatialWeights, method){
+Gstat <- function(SpatialWeights, method, n.cores){
 
-    cat("(2) Calculating Gij ... ")
+    cat("(2) Calculating Gij ... \n")
 
     # t: n^2 = rows of Union
     t <- nrow(SpatialWeights)
@@ -13,8 +13,8 @@ Gstat <- function(SpatialWeights, method){
 
     SpatialWeightsl <- SpatialWeights %>%
         dplyr::mutate(seq = paste(oid, did, sep="-"))
-    SWL <- split(SpatialWeightsl,
-                 f = SpatialWeightsl$seq)
+
+    SWL <- split(SpatialWeightsl, f = SpatialWeightsl$seq)
 
     oid <- did <- w <- NULL
 
@@ -43,8 +43,6 @@ Gstat <- function(SpatialWeights, method){
                 dplyr::select(did) %>% unlist()
             origins <- unique(c(o, origins)) # include o
             destinations <- d
-        }else{
-            stop("method must be one of c('t', 'o', 'd') \n")
         }
 
         ## Merge valid networks
@@ -79,9 +77,26 @@ Gstat <- function(SpatialWeights, method){
 
         return(l)
     }
-    G <- do.call("bind_rows", lapply(SWL, subframe))
+
+    # use multi-core computation
+    if(n.cores > 1){
+        cl <- parallel::makeCluster(n.cores)
+        cat(paste0("using ", n.cores, " cores of the machine which has total ", parallel::detectCores(), " cores \n"))
+
+        parallel::clusterExport(cl, varlist = c("t", "s_sq", "s", "r_bar", "SWL", "oid", "did","w", "method", "SpatialWeights", "subframe"), envir = environment())
+        parallel::clusterEvalQ(cl, library("dplyr"))
+
+        G <- parallel::parLapply(cl = cl, SWL, fun = subframe)
+        parallel::stopCluster(cl)
+    }else{
+        G <- lapply(SWL, FUN = subframe)
+    }
+
+    ## create result in data.frame type
+    G <- do.call("bind_rows", G)
 
     cat("Done! \n")
+    # cat(paste0("note: Total ", nrow(SpatialWeightsl), " networks are considered (zeros are excluded)\n"))
 
     return(G)
 }

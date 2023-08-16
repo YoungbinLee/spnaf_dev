@@ -21,7 +21,7 @@ SpatialWeight <- function(df, shape, snap, queen){
     nb_frame$did <- did
     nb_frame$w <- 1 # add w as 1 for contiguous polygons
 
-    # join spatial weights to input dataframe
+    # join spatial weights to input data.frame
     result <- df %>%
         dplyr::left_join(nb_frame, by = c("oid", "did")) %>%
         dplyr::filter(!is.na(.data$n)) # filter observations with valid n only
@@ -39,8 +39,7 @@ SpatialWeight <- function(df, shape, snap, queen){
 
     cat("Done !\n")
     ## Alarm the size of the union set
-    cat(paste0("note: Total ", nrow(U), " network combinations are ready to be analyzed\n"))
-    cat(paste0("note: which is calculated by the input polygon data\n"))
+    cat(paste0("note: Total ", nrow(U), " network combinations are ready to be analyzed which are calculated by the input polygon data \n"))
 
     return(result)
 }
