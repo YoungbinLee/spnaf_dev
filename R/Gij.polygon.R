@@ -5,10 +5,10 @@
 #' @param queen A TRUE/FALSE input that is used to calculate \code{spdep}'s spatial contingency (Please view documents of \link[spdep]{poly2nb} for more information).
 #' @param snap A parameter that is also used to calculate \code{spdep}'s spatial contingency (Please view documents of \link[spdep]{poly2nb} for more information).
 #' @param method A string value among "o" (origin based), "d" (destination based), and "t" (both way) which determines the way to generate Spatial Weights. The default value is "t".
-#' @param R An integer value to define how many times you want to execute bootstrapping.
+#' @param R An integer value to define how many times you want to execute conditional permutation (default is 999).
 #' @param n.cores A positive integer to decide how many cores of the machine will be used in the computation (default = 1).
 #' @return The result is in the form of a list which includes a dataframe and a \code{sf} object.
-#' Both contain Gij statistics and p-value columns merged to your input df. The geometry type of the latter is linestring.
+#' Both contain Gij statistics and p-value (both positive and negative) columns merged to your input df. The geometry type of the latter is linestring.
 #' @examples
 #' # Data manipulation
 #' CA <- spnaf::CA
@@ -26,7 +26,7 @@
 #' # Execution of Gij.polygon with data above and given parameters
 #' \donttest{
 #' result <- Gij.polygon(df = OD, shape = CA_polygon, queen = TRUE, snap = 1,
-#' method = 't', R = 1000)
+#' method = 't', R = 999, n.cores = 2)
 #' }
 #'
 #' # check the results
@@ -47,7 +47,7 @@
 
 Gij.polygon <- function(df, shape,
                   queen = TRUE, snap = 1,
-                  method = 't', R = 1000, n.cores = 1){
+                  method = 't', R = 999, n.cores = 1){
 
     # checking options are valid
     if(!(isTRUE(queen)|isFALSE(queen))){stop("stop: queen method must be either TRUE or FALSE \n")}
@@ -65,15 +65,10 @@ Gij.polygon <- function(df, shape,
     if(!R == round(R)){stop("stop: R must be a positive integer \n")}
     if(R < 0){stop("stop: R must be a positive integer \n")}
 
-
-    oid <- did <- Gij <- NULL
-
-    sw <- SpatialWeight(df, shape, snap, queen)
-    # result_frame: OD data + G statistic
-    result_frame <- Gstat(SpatialWeights = sw, method = method, n.cores = n.cores) %>%
-        dplyr::select(oid, did, .data$n, Gij)
+    sw <- SpatialWeight(df = df, shape = shape, snap = snap, queen = queen)
     # result_frame: OD data + G statistic + pval
-    result_frame <- Boot(rf = result_frame, R = R, n.cores = n.cores)
+    result_frame <- Gstat(od = df, shape = shape, spatialweights = sw, method = method,
+                          n.cores = n.cores, R = R)
     # result_lines: OD data + G statistic + pval + WKT(lines)
     result_lines <- Resultlines(shape, result_frame)
 

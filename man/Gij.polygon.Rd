@@ -10,7 +10,7 @@ Gij.polygon(
   queen = TRUE,
   snap = 1,
   method = "t",
-  R = 1000,
+  R = 999,
   n.cores = 1
 )
 }
@@ -25,13 +25,13 @@ Gij.polygon(
 
 \item{method}{A string value among "o" (origin based), "d" (destination based), and "t" (both way) which determines the way to generate Spatial Weights. The default value is "t".}
 
-\item{R}{An integer value to define how many times you want to execute bootstrapping.}
+\item{R}{An integer value to define how many times you want to execute conditional permutation (default is 999).}
 
 \item{n.cores}{A positive integer to decide how many cores of the machine will be used in the computation (default = 1).}
 }
 \value{
 The result is in the form of a list which includes a dataframe and a \code{sf} object.
-Both contain Gij statistics and p-value columns merged to your input df. The geometry type of the latter is linestring.
+Both contain Gij statistics and p-value (both positive and negative) columns merged to your input df. The geometry type of the latter is linestring.
 }
 \description{
 Calculate spatial autocorrelation with OD data and corresponding polygons.
@@ -53,7 +53,7 @@ CA_polygon <- spnaf::CA_polygon
 # Execution of Gij.polygon with data above and given parameters
 \donttest{
 result <- Gij.polygon(df = OD, shape = CA_polygon, queen = TRUE, snap = 1,
-method = 't', R = 1000)
+method = 't', R = 999, n.cores = 2)
 }
 
 # check the results

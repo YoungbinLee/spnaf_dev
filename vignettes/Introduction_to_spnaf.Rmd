@@ -62,20 +62,20 @@ head(CA_polygon) # it has geometry column
 
 # Execution of Gij.polygon with data above and given parameters
 result <- Gij.polygon(df = OD, shape = CA_polygon, queen = TRUE, snap = 1,
-method = 't', R = 1000)
+method = 't', R = 999, n.cores = 2) # you may use more cores to decrease running time
 ```
 
 ### Interpretation of the result
 The metric, an extended statistic of Getis and Ord (1992), $G_{i}^{*}$, has similar intuition of hotspot analysis with static data: a high and significant value in a flow indicates spatial clustering of flows with high values. it can be interpreted as Z-value suitable for conducting statistical tests as the metric inherited the characteristics of $G_{i}^{*}$. If one conducted bootstrapping for 1,000 times like above, those with a value greater than the 50th largest value of the distribution (i.e., at the significance level of 0.05) can be defined as positive clusters.
 
 ```{r, eval = TRUE}
-# positive clusters at the significance level of 0.05
-head(result[[1]][result[[1]]$pval < 0.05,])
-# positive clusters at the significance level of 0.05 in lines class
-head(result[[2]][result[[2]]$pval < 0.05,])
+# positive clusters at the significance level of 0.01
+head(result[[1]][result[[1]]$pval_positive < 0.01,])
+# positive clusters at the significance level of 0.01 in lines class
+head(result[[2]][result[[2]]$pval_positive < 0.01,])
 ```
 
-### Visualization of all flows and Significant Flows(<0.05) only
+### Visualization of all flows and Significant Flows(<0.01) only
 ```{r, warning = FALSE, fig.show = "hold", out.width = "45%"}
 library(tmap)
 # plot all flows with the polygon (left)
@@ -86,8 +86,8 @@ tm_shape(CA_polygon) +
 # plot significant flows only with the polygon (right)
 tm_shape(CA_polygon) +
   tm_polygons()+
-  tm_shape(result[[2]][result[[2]]$pval < 0.05,]) +
-  tm_lines(col='pval')
+  tm_shape(result[[2]][result[[2]]$pval_positive < 0.01,]) +
+  tm_lines(col='pval_positive')
 
 ```
 

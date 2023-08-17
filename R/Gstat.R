@@ -1,67 +1,73 @@
 #' @importFrom magrittr %>%
 #' @importFrom dplyr bind_rows
+#' @importFrom rlang .data
 
-Gstat <- function(SpatialWeights, method, n.cores){
+Gstat <- function(od, shape, spatialweights, method, n.cores, R){
 
     cat("(2) Calculating Gij ... \n")
 
+    ## Union is created by input polygons^2
+    U <- merge(shape$id, shape$id)
+    names(U) <- c("oid", "did")
+    U <- U %>% dplyr::filter(.data$oid != .data$did) # remove flow from i to i
+
+    ### Join OD data to Union
+    U <- U %>%
+        dplyr::left_join(
+            od, by = c("oid" = "oid", "did" = "did")) %>%
+        dplyr::mutate(n = ifelse(is.na(.data$n), 0, .data$n)) # fill NA flows with zeros
+
+    ## Alarm the size of the union set
+    cat(paste0("Note: Total ",
+               nrow(U),
+               " network combinations are ready to be analyzed which is calculated by the input polygon data\n"))
+
+    ## create list to iteration
+    union_list <- split(U, f = paste0(U$oid, "-", U$did))
+
+    ## calculate fixed values
     # t: n^2 = rows of Union
-    t <- nrow(SpatialWeights)
-    r_bar <- sum(SpatialWeights$n)/t
-    s_sq <- sum((SpatialWeights$n - r_bar)**2)/(t-1)
+    t <- nrow(U)
+    r_bar <- sum(U$n)/t
+    s_sq <- sum((U$n - r_bar)**2)/(t-1)
     s <- sqrt(s_sq)
 
-    SpatialWeightsl <- SpatialWeights %>%
-        dplyr::mutate(seq = paste(oid, did, sep="-"))
+    # iterate for every flow
+    subframe <- function(l,  shp = shape, ref = spatialweights, m = method, union = U){
 
-    SWL <- split(SpatialWeightsl, f = SpatialWeightsl$seq)
-
-    oid <- did <- w <- NULL
-
-    subframe <- function(l, ref = SpatialWeights, m = method){
         o <- l$oid
         d <- l$did
 
         if(m == 't'){
-            origins <- ref %>%
-                dplyr::filter(oid == o, w == 1) %>%
-                dplyr::select(did) %>% unlist()
-            origins <- unique(c(o, origins)) # include o
-            destinations <- ref %>%
-                dplyr::filter(oid == d, w == 1) %>%
-                dplyr::select(did) %>% unlist()
-            destinations <- unique(c(d, destinations)) # include d
+            ## origins
+            l$origin_neighbor <- paste(shp$id[ref[[o]]], collapse = " ")
+            origins <- c(o, shp$id[ref[[o]]])
+            ## destinations
+            l$destination_neighbor <- paste(shp$id[ref[[d]]], collapse = " ")
+            destinations <- c(d, shp$id[ref[[d]]])
         }else if(m == 'o'){
+            ## origins
+            l$origin_neighbor <- o
             origins <- o
-            destinations <- ref %>%
-                dplyr::filter(oid == d, w == 1) %>%
-                dplyr::select(did) %>% unlist()
-            destinations <- unique(c(d, destinations)) # include d
+            ## destinations
+            l$destination_neighbor <- paste(shp$id[ref[[d]]], collpase = " ")
+            destinations <- c(d, shp$id[ref[[d]]])
         }else if(m == 'd'){
-            origins <- ref %>%
-                dplyr::filter(oid == o, w == 1) %>%
-                dplyr::select(did) %>% unlist()
-            origins <- unique(c(o, origins)) # include o
+            ## origins
+            l$origin_neighbor <- paste(shp$id[ref[[o]]], collpase = " ")
+            origins <- c(o, shp$id[ref[[o]]])
+            ## destinations
+            l$destination_neighbor <- d
             destinations <- d
         }
 
         ## Merge valid networks
-        set1 <- ref %>%
-            dplyr::filter(oid %in% origins, did == d)
-        set2 <- ref %>%
-            dplyr::filter(oid == o, did %in% destinations)
-        set <- rbind(set1, set2) %>%
-            dplyr::distinct()
+        set <- union %>%
+            dplyr::filter(.data$oid %in% origins & .data$did == d |
+                          .data$oid == o, .data$did %in% destinations)
 
-        ## Calculate Wij* for each case
-        if(m == 't'){
-            Wij_star <- length(origins) + length(destinations) -1 # remove duplicated i --> j
-        }else if(m == 'o'){
-            Wij_star <- length(origins)
-        }else{
-            Wij_star <- length(destinations)
-        }
-
+        ## Calculate Wij*
+        Wij_star <-  nrow(set) # = length(origins) + length(destinations) -1
         ## Wij*^2
         Wij_star_sq <- Wij_star**2
         ## S1
@@ -73,7 +79,36 @@ Gstat <- function(SpatialWeights, method, n.cores){
         ## denominator
         denominator <- s * sqrt((t*S1 - Wij_star_sq)/(t-1))
 
-        l$Gij <- numerator/denominator
+        l$Gij <- numerator/denominator # calculated Gij
+
+
+        ## create conditional permutation
+        pseudo_Gij <- vector(mode = "numeric", R)
+        set.seed(23)
+        for(i in 1:R){
+            keep <- set[set$oid == o & set$did ==d,]
+            shuffle <- set[!(set$oid == o & set$did ==d),]
+            shuffle$n <- sample(U[U$oid != o & U$did !=d, "n"],
+                                replace = FALSE, size = nrow(shuffle))
+            set <- rbind(keep, shuffle)
+            sigma <- sum(set$n, na.rm = T) # recalculation of sum
+            ## numerator
+            numerator <- sigma - Wij_star*r_bar # recalculation of numerator
+            ## denominator
+            denominator <- s * sqrt((t*S1 - Wij_star_sq)/(t-1)) # recalculation of denominator
+
+            ## add value to pseudo_Gij
+            pseudo_Gij[i] <- numerator/denominator
+        }
+
+        ## create pseudo p-value by conditional permutation
+        Gij_set <- c(l$Gij, pseudo_Gij)
+
+        ## positive p-value
+        l$pval_positive <- (sum(Gij_set[-1] >= Gij_set[1]) + 1)/(R+1)
+
+        ## negative p-value
+        l$pval_negative <- (sum(Gij_set[-1] < Gij_set[1]) + 1)/(R+1)
 
         return(l)
     }
@@ -81,15 +116,20 @@ Gstat <- function(SpatialWeights, method, n.cores){
     # use multi-core computation
     if(n.cores > 1){
         cl <- parallel::makeCluster(n.cores)
-        cat(paste0("using ", n.cores, " cores of the machine which has total ", parallel::detectCores(), " cores \n"))
+        cat(paste0("NOTE: using ", n.cores, " cores of the machine which has total ",
+                   parallel::detectCores(), " cores \n"))
 
-        parallel::clusterExport(cl, varlist = c("t", "s_sq", "s", "r_bar", "SWL", "oid", "did","w", "method", "SpatialWeights", "subframe"), envir = environment())
+        parallel::clusterExport(cl,
+                                varlist = c("union_list", "shape", "spatialweights",
+                                            "U", "method", "n.cores", "R"),
+                                envir = environment())
         parallel::clusterEvalQ(cl, library("dplyr"))
 
-        G <- parallel::parLapply(cl = cl, SWL, fun = subframe)
+        G <- parallel::parLapply(cl = cl, X = union_list, fun = subframe)
+
         parallel::stopCluster(cl)
     }else{
-        G <- lapply(SWL, FUN = subframe)
+        G <- lapply(union_list, FUN = subframe)
     }
 
     ## create result in data.frame type
@@ -100,3 +140,4 @@ Gstat <- function(SpatialWeights, method, n.cores){
 
     return(G)
 }
+
