@@ -8,7 +8,7 @@ SpatialWeight <- function(df, shape, snap, queen){
 
     cat("(1) Creating Spatial Weights... ")
 
-    nb <- unclass(spdep::poly2nb(shape, snap, queen)) # create nb data from input shape
+    nb <- unclass(spdep::poly2nb(shape, row.names = NULL, snap = snap, queen = snap)) # create nb data from input shape
     names(nb) <- shape$id
 
     cat("Done !\n")

@@ -61,9 +61,9 @@ Gij.polygon <- function(df, shape,
         stop("n.cores must be equal or less than the number of cores of the machine")
     }
 
-    if(!is.numeric(R)){stop("stop: R must be a positive integer \n")}
-    if(!R == round(R)){stop("stop: R must be a positive integer \n")}
-    if(R < 0){stop("stop: R must be a positive integer \n")}
+    if(!is.numeric(R)){stop("stop: R must be a positive integer and large enough to create distribution\n")}
+    if(!R == round(R)){stop("stop: R must be a positive integer and large enough to create distribution\n")}
+    if(R < 1){stop("stop: R must be a positive integer and large enough to create distribution\n")}
 
     sw <- SpatialWeight(df = df, shape = shape, snap = snap, queen = queen)
     # result_frame: OD data + G statistic + pval
